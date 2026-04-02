@@ -1,1 +1,516 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Du lịch Miền Trung — Hệ thống dự báo quá tải</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f4f8; color: #1a2332; }
 
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, #1F4E79 0%, #2E75B6 100%);
+    color: white; padding: 24px 32px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .header h1 { font-size: 22px; font-weight: 600; }
+  .header p  { font-size: 12px; opacity: .75; margin-top: 4px; }
+  .clock { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* ── NAV TABS ── */
+  .tabs { display: flex; background: white; border-bottom: 2px solid #e2e8f0; padding: 0 32px; }
+  .tab-btn {
+    padding: 14px 24px; border: none; background: none; cursor: pointer;
+    font-size: 14px; font-weight: 500; color: #64748b;
+    border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all .2s;
+  }
+  .tab-btn.active { color: #1F4E79; border-bottom-color: #1F4E79; }
+  .tab-btn:hover  { color: #2E75B6; }
+
+  /* ── MAIN ── */
+  .main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── CARDS ── */
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media(max-width:700px){ .grid3{grid-template-columns:1fr;} .grid2{grid-template-columns:1fr;} }
+
+  .card {
+    background: white; border-radius: 12px; padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  }
+  .card-title { font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 12px; }
+
+  /* ── ALERT CITY CARD ── */
+  .city-card { border-radius: 12px; padding: 20px; color: white; position: relative; overflow: hidden; }
+  .city-card.normal   { background: linear-gradient(135deg,#1a7b6b,#22a08a); }
+  .city-card.warning  { background: linear-gradient(135deg,#b45309,#d97706); }
+  .city-card.critical { background: linear-gradient(135deg,#991b1b,#dc2626); }
+  .city-card h3 { font-size: 18px; font-weight: 700; }
+  .city-card .visitors { font-size: 36px; font-weight: 800; margin: 6px 0; }
+  .city-card .sub { font-size: 12px; opacity: .85; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; background: rgba(255,255,255,.25);
+    margin-bottom: 8px;
+  }
+  .progress-track { background: rgba(255,255,255,.2); border-radius: 4px; height: 6px; margin-top: 10px; }
+  .progress-fill  { background: white; border-radius: 4px; height: 6px; transition: width .6s; }
+
+  .weather-row { display: flex; gap: 12px; margin-top: 10px; font-size: 12px; opacity: .9; }
+  .weather-row span { background: rgba(255,255,255,.15); padding: 3px 8px; border-radius: 6px; }
+
+  /* ── SUGGEST FORM ── */
+  .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; align-items: flex-end; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: #64748b; }
+  select, .btn {
+    padding: 10px 16px; border-radius: 8px; border: 1.5px solid #e2e8f0;
+    font-size: 14px; cursor: pointer;
+  }
+  select { background: white; color: #1a2332; }
+  select:focus { outline: none; border-color: #2E75B6; }
+  .btn {
+    background: #1F4E79; color: white; border: none; font-weight: 600;
+    transition: background .2s;
+  }
+  .btn:hover { background: #2E75B6; }
+  .checkrow { display: flex; gap: 20px; align-items: center; }
+  .checkrow label { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+
+  /* ── SUGGEST RESULT ── */
+  .suggest-box {
+    border-radius: 12px; padding: 20px; margin-bottom: 20px;
+    border-left: 5px solid #22a08a; background: #f0fdf9;
+  }
+  .suggest-box.warning  { border-color: #d97706; background: #fffbeb; }
+  .suggest-box.critical { border-color: #dc2626; background: #fef2f2; }
+  .suggest-box h3 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .suggest-box .tip { font-size: 14px; color: #374151; margin-top: 8px; }
+
+  /* ── COMPARE BARS ── */
+  .compare-item { margin-bottom: 16px; }
+  .compare-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .compare-bar-track { background: #e2e8f0; border-radius: 6px; height: 20px; }
+  .compare-bar-fill {
+    border-radius: 6px; height: 20px; transition: width .7s;
+    display: flex; align-items: center; padding-left: 8px;
+    font-size: 11px; font-weight: 700; color: white; white-space: nowrap;
+  }
+  .fill-normal   { background: #1a7b6b; }
+  .fill-warning  { background: #d97706; }
+  .fill-critical { background: #dc2626; }
+
+  .recommend-box {
+    background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 10px;
+    padding: 14px 18px; margin-top: 16px; font-size: 14px; color: #1e40af;
+  }
+
+  /* ── LOADING ── */
+  .loading { text-align: center; padding: 40px; color: #94a3b8; font-size: 14px; }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid #e2e8f0;
+    border-top-color: #2E75B6; border-radius: 50%;
+    animation: spin .8s linear infinite; margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── CHART ── */
+  .chart-wrap { position: relative; height: 240px; }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center; padding: 24px; font-size: 12px; color: #94a3b8;
+    border-top: 1px solid #e2e8f0; margin-top: 40px; background: white;
+  }
+
+  /* ── UPDATED TAG ── */
+  .updated { font-size: 11px; color: #94a3b8; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div>
+    <h1>🗺️ Hệ thống Dự báo Quá tải Du lịch Miền Trung</h1>
+    <p>Đà Nẵng · Hội An · Huế &nbsp;|&nbsp; Dữ liệu 2022–2026 · Real-time weather</p>
+  </div>
+  <div class="clock" id="clock">--:--:--</div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('today',this)">📡 Hôm nay</button>
+  <button class="tab-btn" onclick="showTab('suggest',this)">🔍 Tư vấn thời điểm</button>
+  <button class="tab-btn" onclick="showTab('compare',this)">📊 So sánh thành phố</button>
+</div>
+
+<div class="main">
+
+  <!-- ═══ TAB 1: HÔM NAY ═══ -->
+  <div id="tab-today" class="section active">
+    <p class="updated" id="updated-time">Đang tải dữ liệu thời gian thực...</p>
+
+    <!-- Alert cards -->
+    <div class="grid3" id="city-cards">
+      <div class="loading"><div class="spinner"></div>Đang lấy dữ liệu...</div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="grid2" id="charts-row" style="display:none">
+      <div class="card">
+        <div class="card-title">Tải hiện tại so với ngưỡng (%)</div>
+        <div class="chart-wrap"><canvas id="chartLoad"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Dự báo 3 ngày tới — Đà Nẵng</div>
+        <div class="chart-wrap"><canvas id="chartForecast"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Info box -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-title">Hướng dẫn đọc cảnh báo</div>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;margin-top:8px">
+        <span>🟢 <strong>Normal</strong> — Dưới ngưỡng Warning, hoạt động bình thường</span>
+        <span>🟡 <strong>Warning</strong> — Đông, nên chuẩn bị phân luồng</span>
+        <span>🔴 <strong>Critical</strong> — Quá tải, cần kích hoạt phương án khẩn cấp</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 2: TƯ VẤN ═══ -->
+  <div id="tab-suggest" class="section">
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">Chọn thông tin chuyến đi</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Thành phố</label>
+          <select id="s-city">
+            <option value="Da Nang">Đà Nẵng</option>
+            <option value="Hoi An">Hội An</option>
+            <option value="Hue">Huế</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tháng dự kiến</label>
+          <select id="s-month">
+            <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
+            <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
+            <option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+            <option value="7">Tháng 7</option><option value="8">Tháng 8</option>
+            <option value="9">Tháng 9</option><option value="10">Tháng 10</option>
+            <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Lịch</label>
+          <div class="checkrow">
+            <label><input type="checkbox" id="s-weekend"> Cuối tuần</label>
+            <label><input type="checkbox" id="s-holiday"> Ngày lễ</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <button class="btn" onclick="doSuggest()">Dự báo ngay</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="suggest-result"></div>
+  </div>
+
+  <!-- ═══ TAB 3: SO SÁNH ═══ -->
+  <div id="tab-compare" class="section">
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">So sánh 3 thành phố cùng thời điểm</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tháng</label>
+          <select id="c-month">
+            <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
+            <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
+            <option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+            <option value="7">Tháng 7</option><option value="8">Tháng 8</option>
+            <option value="9">Tháng 9</option><option value="10">Tháng 10</option>
+            <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <div class="checkrow">
+            <label><input type="checkbox" id="c-weekend"> Cuối tuần</label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <button class="btn" onclick="doCompare()">So sánh</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Mức độ đông theo thành phố</div>
+        <div id="compare-bars"><p style="color:#94a3b8;font-size:13px">Chọn tháng và nhấn So sánh</p></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Biểu đồ so sánh lượt khách</div>
+        <div class="chart-wrap"><canvas id="chartCompare"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<footer>
+  Nhóm 9 · Kho & Khai phá Dữ liệu · ĐH Kinh tế Đà Nẵng 2026 &nbsp;|&nbsp;
+  Dữ liệu thời tiết: <a href="https://open-meteo.com" target="_blank">Open-Meteo API</a>
+</footer>
+
+<script>
+// ── CLOCK ──
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    now.toLocaleTimeString('vi-VN', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateClock, 1000); updateClock();
+
+// ── TABS ──
+function showTab(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── LEVEL HELPER ──
+const LEVEL_LABEL = { normal:'🟢 BÌNH THƯỜNG', warning:'🟡 CẢNH BÁO', critical:'🔴 QUÁ TẢI' };
+const LEVEL_COLOR = { normal:'#1a7b6b', warning:'#d97706', critical:'#dc2626' };
+
+// ── TAB 1: TODAY ──
+let chartLoad = null, chartForecast = null;
+
+async function loadToday() {
+  try {
+    const res  = await fetch('/api/today');
+    const data = await res.json();
+    document.getElementById('updated-time').textContent = `Cập nhật lúc ${data.updated} — Nguồn: Open-Meteo API`;
+
+    const cities = data.cities;
+    const keys   = ['Da Nang','Hoi An','Hue'];
+
+    // Render city cards
+    document.getElementById('city-cards').innerHTML = keys.map(k => {
+      const c = cities[k];
+      const pct = Math.min(c.pct, 100);
+      const rainIcon = c.rain > 10 ? '🌧️' : c.rain > 0 ? '🌦️' : '☀️';
+      return `
+      <div class="city-card ${c.level}">
+        <div class="badge">${LEVEL_LABEL[c.level]}</div>
+        <h3>${c.label}</h3>
+        <div class="visitors">${c.est.toLocaleString('vi-VN')}</div>
+        <div class="sub">lượt khách dự báo hôm nay</div>
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="sub" style="margin-top:4px">${pct}% công suất (ngưỡng Critical: ${c.threshold.critical.toLocaleString()})</div>
+        <div class="weather-row">
+          <span>${rainIcon} ${c.tmax}°C / ${c.tmin}°C</span>
+          <span>🌧 ${c.rain}mm</span>
+          <span>⚡ W.Score ${c.w_score}</span>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Show charts
+    document.getElementById('charts-row').style.display = 'grid';
+
+    // Chart: load %
+    const loadData  = keys.map(k => Math.min(cities[k].pct, 120));
+    const loadColors= keys.map(k => LEVEL_COLOR[cities[k].level]);
+    if (chartLoad) chartLoad.destroy();
+    chartLoad = new Chart(document.getElementById('chartLoad'), {
+      type: 'bar',
+      data: {
+        labels: keys.map(k => cities[k].label),
+        datasets: [{ data: loadData, backgroundColor: loadColors, borderRadius: 6 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { max: 130, ticks: { callback: v => v + '%' }, grid: { color: '#f1f5f9' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    // Chart: 3-day forecast for Da Nang
+    const fcDN = cities['Da Nang'].forecast;
+    const today = new Date();
+    const fcLabels = fcDN.map((_, i) => {
+      const d = new Date(today); d.setDate(d.getDate() + i);
+      return d.toLocaleDateString('vi-VN', {weekday:'short', day:'numeric', month:'numeric'});
+    });
+    const fcScores = fcDN.map(d => Math.round(d.score * 100));
+    if (chartForecast) chartForecast.destroy();
+    chartForecast = new Chart(document.getElementById('chartForecast'), {
+      type: 'line',
+      data: {
+        labels: fcLabels,
+        datasets: [{
+          label: 'W.Score (%)',
+          data: fcScores,
+          borderColor: '#2E75B6', backgroundColor: 'rgba(46,117,182,.1)',
+          fill: true, tension: .3, pointRadius: 6, pointBackgroundColor: '#2E75B6'
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { min: 0, max: 100, ticks: { callback: v => v + '%' }, grid: { color: '#f1f5f9' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  } catch(e) {
+    document.getElementById('city-cards').innerHTML =
+      '<div class="loading" style="grid-column:1/-1">⚠️ Không thể tải dữ liệu. Vui lòng thử lại.</div>';
+  }
+}
+loadToday();
+setInterval(loadToday, 5 * 60 * 1000); // refresh mỗi 5 phút
+
+// ── TAB 2: SUGGEST ──
+async function doSuggest() {
+  const city    = document.getElementById('s-city').value;
+  const month   = document.getElementById('s-month').value;
+  const is_we   = document.getElementById('s-weekend').checked;
+  const is_hol  = document.getElementById('s-holiday').checked;
+
+  document.getElementById('suggest-result').innerHTML = '<div class="loading"><div class="spinner"></div>Đang tính toán...</div>';
+
+  const res  = await fetch('/api/suggest', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ city, month: parseInt(month), is_weekend: is_we, is_holiday: is_hol })
+  });
+  const d = await res.json();
+
+  const clsMap = { normal:'', warning:' warning', critical:' critical' };
+
+  document.getElementById('suggest-result').innerHTML = `
+    <div class="suggest-box${clsMap[d.level]}">
+      <h3>${d.label} — ${d.month_name}</h3>
+      <div style="font-size:28px;font-weight:800;margin:6px 0">${d.est.toLocaleString('vi-VN')} <span style="font-size:14px;font-weight:400">lượt khách dự báo</span></div>
+      <div style="font-size:14px;font-weight:600;color:${LEVEL_COLOR[d.level]}">${LEVEL_LABEL[d.level]}</div>
+      <div class="tip">${d.suggestion}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Lượt khách dự báo cả năm — ${d.label}</div>
+      <div class="chart-wrap"><canvas id="chartSuggest"></canvas></div>
+    </div>
+  `;
+
+  // Monthly chart
+  const months = d.monthly.map(m => m.name.replace('Tháng ','T'));
+  const vals   = d.monthly.map(m => m.est);
+  const colors = d.monthly.map(m => LEVEL_COLOR[m.level]);
+
+  new Chart(document.getElementById('chartSuggest'), {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [{
+        data: vals, backgroundColor: colors, borderRadius: 4,
+        borderWidth: d.monthly.map((m,i) => parseInt(month)-1 === i ? 3 : 0),
+        borderColor: '#1a2332'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { ticks: { callback: v => (v/1000).toFixed(0)+'k' }, grid: { color: '#f1f5f9' } },
+        x: { grid: { display: false }, ticks: { autoSkip: false, maxRotation: 0 } }
+      }
+    }
+  });
+}
+
+// ── TAB 3: COMPARE ──
+let chartCompare = null;
+
+async function doCompare() {
+  const month = document.getElementById('c-month').value;
+  const is_we = document.getElementById('c-weekend').checked;
+
+  const res = await fetch('/api/compare', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ month: parseInt(month), is_weekend: is_we })
+  });
+  const d = await res.json();
+
+  const maxVal = Math.max(...d.cities.map(c => c.est));
+
+  // Bars
+  document.getElementById('compare-bars').innerHTML = d.cities.map((c,i) => `
+    <div class="compare-item">
+      <div class="compare-label">
+        <span>${i===0?'🥇':i===1?'🥈':'🥉'} ${c.label}</span>
+        <span style="color:${LEVEL_COLOR[c.level]};font-weight:600">${c.est.toLocaleString('vi-VN')} lượt · ${LEVEL_LABEL[c.level]}</span>
+      </div>
+      <div class="compare-bar-track">
+        <div class="compare-bar-fill fill-${c.level}" style="width:${Math.round(c.est/maxVal*100)}%">
+          ${c.pct}%
+        </div>
+      </div>
+    </div>
+  `).join('') + `
+    <div class="recommend-box">
+      💡 <strong>Gợi ý phân luồng:</strong> ${d.month_name} nên ưu tiên tham quan <strong>${d.recommend}</strong> — ít đông hơn, trải nghiệm tốt hơn.
+    </div>
+  `;
+
+  // Chart
+  if (chartCompare) chartCompare.destroy();
+  chartCompare = new Chart(document.getElementById('chartCompare'), {
+    type: 'radar',
+    data: {
+      labels: ['Lượt khách', 'Tải (%)', 'Ngưỡng W', 'Ngưỡng C'],
+      datasets: d.cities.map((c, i) => ({
+        label: c.label,
+        data: [
+          Math.round(c.est/1000),
+          c.pct,
+          Math.round(c.pct * 0.66),
+          Math.round(c.pct * 0.42)
+        ],
+        borderColor: [LEVEL_COLOR.normal, LEVEL_COLOR.warning, LEVEL_COLOR.critical][i],
+        backgroundColor: [
+          'rgba(26,123,107,.15)','rgba(217,119,6,.15)','rgba(220,38,38,.15)'
+        ][i],
+        pointBackgroundColor: [LEVEL_COLOR.normal, LEVEL_COLOR.warning, LEVEL_COLOR.critical][i],
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position:'bottom', labels:{ boxWidth:12, font:{size:11} } } },
+      scales: { r: { ticks: { display: false }, grid: { color: '#e2e8f0' } } }
+    }
+  });
+}
+
+// Set current month as default
+const now = new Date();
+document.getElementById('s-month').value = now.getMonth() + 1;
+document.getElementById('c-month').value = now.getMonth() + 1;
+</script>
+</body>
+</html>
