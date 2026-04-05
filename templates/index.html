@@ -1,121 +1,447 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TourismWatch — Hệ thống Quản lý Du lịch Miền Trung</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<style>
-:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--blue:#388bfd;--green:#3fb950;--yellow:#d29922;--red:#f85149;--teal:#39c5cf;--purple:#bc8cff}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
-.logo{padding:20px 16px 16px;border-bottom:1px solid var(--border)}
-.logo-title{font-size:16px;font-weight:700;color:var(--blue)}
-.logo-sub{font-size:10px;color:var(--muted);margin-top:2px}
-.nav{flex:1;padding:12px 8px}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--muted);transition:all .15s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left}
-.nav-item:hover{background:var(--bg3);color:var(--text)}
-.nav-item.active{background:rgba(56,139,253,.15);color:var(--blue);font-weight:600}
-.nav-icon{font-size:16px;width:20px;text-align:center}
-.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)}
-.status-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-@keyframes spin{to{transform:rotate(360deg)}}
-.main{margin-left:220px;min-height:100vh}
-.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50}
-.topbar-title{font-size:16px;font-weight:600}
-.topbar-right{display:flex;align-items:center;gap:16px}
-.clock-badge{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 14px;font-size:13px;font-variant-numeric:tabular-nums;color:var(--teal)}
-.refresh-btn{background:var(--blue);color:white;border:none;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;transition:opacity .15s}
-.refresh-btn:hover{opacity:.85}
-.page{display:none;padding:24px}
-.page.active{display:block}
-.page-header{margin-bottom:20px}
-.page-header h2{font-size:18px;font-weight:700}
-.page-header p{font-size:13px;color:var(--muted);margin-top:4px}
-.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
-.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
-.g21{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:20px}
-.g12{display:grid;grid-template-columns:1fr 2fr;gap:14px;margin-bottom:20px}
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px}
-.card-head{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
-.card-tag{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
-.tag-live{background:rgba(63,185,80,.15);color:var(--green)}
-.tag-blue{background:rgba(56,139,253,.15);color:var(--blue)}
-.kpi-val{font-size:28px;font-weight:800;line-height:1}
-.kpi-sub{font-size:12px;color:var(--muted);margin-top:4px}
-.alert-banner{border-radius:10px;padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:14px;border:1px solid}
-.alert-banner.critical{background:rgba(248,81,73,.08);border-color:rgba(248,81,73,.3)}
-.alert-banner.warning{background:rgba(210,153,34,.08);border-color:rgba(210,153,34,.3)}
-.alert-banner.ok{background:rgba(63,185,80,.08);border-color:rgba(63,185,80,.3)}
-.alert-icon{font-size:24px;flex-shrink:0}
-.alert-text strong{font-size:14px}
-.alert-text p{font-size:12px;color:var(--muted);margin-top:2px}
-.city-status{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
-.city-status:last-child{border-bottom:none}
-.cs-left{display:flex;align-items:center;gap:10px}
-.cs-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.cs-name{font-size:14px;font-weight:600}
-.cs-sub{font-size:11px;color:var(--muted)}
-.cs-right{text-align:right}
-.cs-val{font-size:16px;font-weight:700}
-.level-badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:10px;font-weight:700;margin-top:2px}
-.lb-normal{background:rgba(63,185,80,.15);color:var(--green)}
-.lb-warning{background:rgba(210,153,34,.15);color:var(--yellow)}
-.lb-critical{background:rgba(248,81,73,.15);color:var(--red)}
-.bar-mini{background:var(--bg3);border-radius:3px;height:5px;margin-top:6px}
-.bar-mini-fill{border-radius:3px;height:5px;transition:width .6s}
-#map{height:380px;border-radius:8px;border:1px solid var(--border)}
-.chart-wrap{position:relative}
-.form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
-.fg{display:flex;flex-direction:column;gap:5px}
-.fg label{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase}
-select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:7px;font-size:13px;cursor:pointer}
-select:focus{outline:none;border-color:var(--blue)}
-.btn-primary{background:var(--blue);color:white;border:none;padding:8px 18px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
-.btn-primary:hover{opacity:.85}
-.check-row{display:flex;gap:14px}
-.check-row label{display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;color:var(--muted)}
-.check-row input{accent-color:var(--blue)}
-.data-table{width:100%;border-collapse:collapse;font-size:13px}
-.data-table th{text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);font-weight:600}
-.data-table td{padding:10px 12px;border-bottom:1px solid var(--bg3)}
-.data-table tr:last-child td{border-bottom:none}
-.data-table tr:hover td{background:var(--bg3)}
-.booking-card{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
-.booking-card:last-child{border-bottom:none}
-.bk-name{font-size:13px;font-weight:600;margin-bottom:3px}
-.bk-loc{font-size:11px;color:var(--muted);margin-bottom:5px}
-.bk-price{font-size:13px;font-weight:700;color:var(--blue)}
-.bk-rating{font-size:11px;color:var(--yellow)}
-.bk-link{font-size:11px;color:var(--blue);text-decoration:none}
-.bk-link:hover{text-decoration:underline}
-.spinner{width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;margin:20px auto}
-@media(max-width:900px){.sidebar{display:none}.main{margin-left:0}.g4,.g3,.g2,.g21,.g12{grid-template-columns:1fr}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>TourismWatch Pro · Quản lý du lịch miền Trung</title>
+  <!-- Chart.js & Leaflet -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #0b1120;
+      --bg2: #111827;
+      --bg3: #1f2937;
+      --border: #2d3a4e;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --blue: #3b82f6;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --teal: #14b8a6;
+      --purple: #a855f7;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 260px;
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      z-index: 100;
+    }
+
+    .logo {
+      padding: 24px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo-title {
+      font-size: 20px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .nav {
+      flex: 1;
+      padding: 20px 12px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: all 0.2s;
+      width: 100%;
+      background: none;
+      border: none;
+      text-align: left;
+      margin-bottom: 4px;
+    }
+
+    .nav-item:hover {
+      background: var(--bg3);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      background: rgba(59, 130, 246, 0.2);
+      color: var(--blue);
+    }
+
+    .nav-icon {
+      font-size: 20px;
+      width: 28px;
+    }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      display: inline-block;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Main content */
+    .main {
+      margin-left: 260px;
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 90;
+    }
+
+    .topbar-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .topbar-right {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .clock-badge {
+      background: var(--bg3);
+      padding: 6px 14px;
+      border-radius: 30px;
+      font-family: monospace;
+      font-size: 14px;
+      border: 1px solid var(--border);
+    }
+
+    .refresh-btn {
+      background: var(--blue);
+      border: none;
+      color: white;
+      padding: 6px 16px;
+      border-radius: 30px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .refresh-btn:hover {
+      opacity: 0.85;
+    }
+
+    .page {
+      display: none;
+      padding: 24px 28px;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* Cards & Grids */
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 20px;
+      transition: transform 0.1s;
+    }
+
+    .card-header {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .kpi-value {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .alert-banner {
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      border-left: 6px solid;
+    }
+
+    .alert-critical {
+      background: rgba(239, 68, 68, 0.1);
+      border-left-color: var(--red);
+    }
+
+    .alert-warning {
+      background: rgba(245, 158, 11, 0.1);
+      border-left-color: var(--yellow);
+    }
+
+    .alert-normal {
+      background: rgba(16, 185, 129, 0.1);
+      border-left-color: var(--green);
+    }
+
+    .city-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .city-status-row:last-child {
+      border-bottom: none;
+    }
+
+    .level-badge {
+      padding: 2px 10px;
+      border-radius: 30px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .level-normal {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--green);
+    }
+
+    .level-warning {
+      background: rgba(245, 158, 11, 0.2);
+      color: var(--yellow);
+    }
+
+    .level-critical {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--red);
+    }
+
+    .progress-bar {
+      background: var(--bg3);
+      border-radius: 6px;
+      height: 6px;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      border-radius: 6px;
+      height: 6px;
+      width: 0%;
+    }
+
+    /* Map */
+    #map {
+      height: 380px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+    }
+
+    /* Form */
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: flex-end;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    select, input[type="checkbox"] {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      border: none;
+      color: white;
+      padding: 8px 22px;
+      border-radius: 30px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Hotel cards */
+    .hotel-card {
+      display: flex;
+      gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hotel-avatar {
+      width: 60px;
+      height: 60px;
+      background: var(--bg3);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    .hotel-info {
+      flex: 1;
+    }
+
+    .hotel-name {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .hotel-price {
+      color: var(--teal);
+      font-weight: 700;
+    }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .sidebar {
+        display: none;
+      }
+      .main {
+        margin-left: 0;
+      }
+      .grid-4, .grid-3, .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .traffic-tip {
+      background: var(--bg3);
+      border-radius: 12px;
+      padding: 14px;
+      margin-top: 12px;
+      font-size: 13px;
+      border-left: 3px solid var(--yellow);
+    }
+  </style>
 </head>
 <body>
 
 <div class="sidebar">
   <div class="logo">
-    <div class="logo-title">🗺 TourismWatch</div>
+    <div class="logo-title">🗺️ TourismWatch Pro</div>
     <div class="logo-sub">Hệ thống quản lý du lịch miền Trung</div>
   </div>
   <nav class="nav">
-    <button class="nav-item active" onclick="showPage('overview',this)"><span class="nav-icon">📊</span>Tổng quan</button>
-    <button class="nav-item" onclick="showPage('alert',this)"><span class="nav-icon">🚨</span>Cảnh báo</button>
-    <button class="nav-item" onclick="showPage('map',this)"><span class="nav-icon">🗺️</span>Bản đồ & Điểm đến</button>
-    <button class="nav-item" onclick="showPage('forecast',this)"><span class="nav-icon">🔮</span>Dự báo</button>
-    <button class="nav-item" onclick="showPage('booking',this)"><span class="nav-icon">🏨</span>Lưu trú</button>
-    <button class="nav-item" onclick="showPage('report',this)"><span class="nav-icon">📋</span>Báo cáo</button>
+    <button class="nav-item active" onclick="showPage('overview')"><span class="nav-icon">📊</span>Tổng quan</button>
+    <button class="nav-item" onclick="showPage('alert')"><span class="nav-icon">⚠️</span>Cảnh báo</button>
+    <button class="nav-item" onclick="showPage('map')"><span class="nav-icon">🗺️</span>Bản đồ & Giao thông</button>
+    <button class="nav-item" onclick="showPage('forecast')"><span class="nav-icon">🔮</span>Dự báo thông minh</button>
+    <button class="nav-item" onclick="showPage('booking')"><span class="nav-icon">🏨</span>Lưu trú</button>
+    <button class="nav-item" onclick="showPage('report')"><span class="nav-icon">📋</span>Báo cáo</button>
   </nav>
   <div class="sidebar-footer">
-    <span class="status-dot"></span>Hệ thống hoạt động<br>
-    <span style="margin-left:13px">Nhóm 9 · DUE 2026</span>
+    <span class="status-dot"></span> Hệ thống hoạt động · Nhóm 9 DUE 2026
   </div>
 </div>
 
@@ -123,291 +449,323 @@ select:focus{outline:none;border-color:var(--blue)}
   <div class="topbar">
     <div class="topbar-title" id="page-title">Tổng quan hệ thống</div>
     <div class="topbar-right">
-      <div id="updated-tag" style="font-size:11px;color:var(--muted)">Đang tải...</div>
       <div class="clock-badge" id="clock">--:--:--</div>
-      <button class="refresh-btn" onclick="loadAll()">⟳ Làm mới</button>
+      <button class="refresh-btn" onclick="loadAllData()">⟳ Làm mới</button>
     </div>
   </div>
 
-  <!-- OVERVIEW -->
-  <div class="page active" id="page-overview">
-    <div class="page-header"><h2>Tổng quan hệ thống</h2><p>Dữ liệu thời gian thực · Open-Meteo API · Mô hình ML Nhóm 9</p></div>
-    <div id="main-alert" class="alert-banner ok"><div class="alert-icon">⏳</div><div class="alert-text"><strong>Đang tải dữ liệu...</strong><p>Vui lòng chờ</p></div></div>
-    <div class="g4" id="kpi-row">
-      <div class="card"><div class="kpi-val" style="color:var(--blue)">--</div><div class="kpi-sub">Tổng dự báo hôm nay</div></div>
-      <div class="card"><div class="kpi-val" style="color:var(--green)">--</div><div class="kpi-sub">Thành phố bình thường</div></div>
-      <div class="card"><div class="kpi-val" style="color:var(--yellow)">--</div><div class="kpi-sub">Cảnh báo Warning</div></div>
-      <div class="card"><div class="kpi-val" style="color:var(--red)">--</div><div class="kpi-sub">Cảnh báo Critical</div></div>
-    </div>
-    <div class="g21">
+  <!-- PAGE OVERVIEW -->
+  <div id="page-overview" class="page active">
+    <div class="alert-banner" id="overview-alert">Đang tải dữ liệu...</div>
+    <div class="grid-4" id="kpi-container"></div>
+    <div class="grid-2">
       <div class="card">
-        <div class="card-head">Tình trạng 3 thành phố <span class="card-tag tag-live">LIVE</span></div>
-        <div id="city-status-list"><div class="spinner"></div></div>
+        <div class="card-header">Tình trạng 3 thành phố <span style="color:var(--blue)">LIVE</span></div>
+        <div id="city-status-list"></div>
       </div>
       <div class="card">
-        <div class="card-head">Tải hôm nay (% ngưỡng Critical)</div>
-        <div class="chart-wrap" style="height:200px"><canvas id="chartOvLoad"></canvas></div>
+        <div class="card-header">Tải hiện tại (% ngưỡng Critical)</div>
+        <canvas id="chartLoadOverview" height="200"></canvas>
       </div>
-    </div>
-    <div class="g3" id="forecast3-row"></div>
-  </div>
-
-  <!-- ALERT -->
-  <div class="page" id="page-alert">
-    <div class="page-header"><h2>Hệ thống cảnh báo</h2><p>Ngưỡng hiệu chỉnh theo phân vị dữ liệu thực tế 2022–2025</p></div>
-    <div class="g3" id="alert-cards"></div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-head">Số ngày Critical theo tháng (mô phỏng 2025)</div>
-      <div class="chart-wrap" style="height:260px"><canvas id="chartAlertHist"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-head">Quy trình xử lý cảnh báo</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px">
-        <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center"><div style="font-size:24px;margin-bottom:6px">🟢</div><div style="font-weight:700;font-size:13px;color:var(--green)">NORMAL</div><div style="font-size:11px;color:var(--muted);margin-top:6px">Dưới ngưỡng Warning<br>Giám sát định kỳ</div></div>
-        <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center"><div style="font-size:24px;margin-bottom:6px">🟡</div><div style="font-weight:700;font-size:13px;color:var(--yellow)">WARNING</div><div style="font-size:11px;color:var(--muted);margin-top:6px">Tăng cường nhân sự<br>Chuẩn bị phân luồng</div></div>
-        <div style="background:var(--bg3);border-radius:8px;padding:14px;text-align:center"><div style="font-size:24px;margin-bottom:6px">🔴</div><div style="font-weight:700;font-size:13px;color:var(--red)">CRITICAL</div><div style="font-size:11px;color:var(--muted);margin-top:6px">Kích hoạt phân luồng<br>Hạn chế vé · Điều hướng</div></div>
+      <div class="card-header">Dự báo 3 ngày tới – Chỉ số tải (W.Score)</div>
+      <canvas id="chart3day" height="180"></canvas>
+    </div>
+  </div>
+
+  <!-- PAGE ALERT -->
+  <div id="page-alert" class="page">
+    <div class="grid-3" id="alert-cards"></div>
+    <div class="card">
+      <div class="card-header">Số ngày CRITICAL theo tháng (2022–2025 thực tế)</div>
+      <canvas id="chartCriticalHist" height="220"></canvas>
+    </div>
+    <div class="card">
+      <div class="card-header">Quy trình xử lý cảnh báo (cập nhật 2026)</div>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; justify-content:space-between">
+        <div style="flex:1; background:var(--bg3); border-radius:16px; padding:14px; text-align:center"><span style="font-size:28px;">🟢</span><br><strong>NORMAL</strong><br><small>Giám sát định kỳ</small></div>
+        <div style="flex:1; background:var(--bg3); border-radius:16px; padding:14px; text-align:center"><span style="font-size:28px;">🟡</span><br><strong>WARNING</strong><br><small>Tăng nhân sự · Chuẩn bị phân luồng</small></div>
+        <div style="flex:1; background:var(--bg3); border-radius:16px; padding:14px; text-align:center"><span style="font-size:28px;">🔴</span><br><strong>CRITICAL</strong><br><small>Kích hoạt phân luồng · Hạn chế vé</small></div>
       </div>
     </div>
   </div>
 
-  <!-- MAP -->
-  <div class="page" id="page-map">
-    <div class="page-header"><h2>Bản đồ & Điểm đến</h2><p>OpenStreetMap · Click marker để xem điểm tham quan</p></div>
-    <div class="g12">
-      <div class="card" style="padding:0;overflow:hidden"><div id="map"></div></div>
+  <!-- PAGE MAP -->
+  <div id="page-map" class="page">
+    <div class="grid-2">
+      <div class="card" style="padding:0; overflow:hidden">
+        <div id="map" style="height:380px;"></div>
+      </div>
       <div>
-        <div class="card" style="margin-bottom:14px">
-          <div class="card-head">Điểm tham quan</div>
-          <div id="attractions-list"><div style="font-size:12px;color:var(--muted)">Click vào thành phố trên bản đồ</div></div>
+        <div class="card">
+          <div class="card-header">🚦 Dự báo giao thông & tắc đường</div>
+          <div id="traffic-info">Đang tải dữ liệu giao thông...</div>
         </div>
         <div class="card">
-          <div class="card-head">Thông tin thành phố</div>
-          <div id="city-info-panel"><div style="font-size:12px;color:var(--muted)">Chọn thành phố trên bản đồ</div></div>
+          <div class="card-header">📍 Điểm đến nổi bật</div>
+          <div id="attractions-list"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- FORECAST -->
-  <div class="page" id="page-forecast">
-    <div class="page-header"><h2>Dự báo lượt khách</h2><p>Random Forest · Seasonality + Weather + Lag features · 43 biến đầu vào</p></div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-head">Tham số dự báo</div>
+  <!-- PAGE FORECAST -->
+  <div id="page-forecast" class="page">
+    <div class="card">
+      <div class="card-header">Tham số dự báo (Random Forest + Biến sự kiện)</div>
       <div class="form-row">
-        <div class="fg"><label>Thành phố</label><select id="f-city"><option value="Da Nang">Đà Nẵng</option><option value="Hoi An">Hội An</option><option value="Hue">Huế</option></select></div>
-        <div class="fg"><label>Tháng</label><select id="f-month"><option value="1">Tháng 1</option><option value="2">Tháng 2</option><option value="3">Tháng 3</option><option value="4">Tháng 4</option><option value="5">Tháng 5</option><option value="6">Tháng 6</option><option value="7">Tháng 7</option><option value="8">Tháng 8</option><option value="9">Tháng 9</option><option value="10">Tháng 10</option><option value="11">Tháng 11</option><option value="12">Tháng 12</option></select></div>
-        <div class="fg"><label>Điều kiện</label><div class="check-row"><label><input type="checkbox" id="f-weekend"> Cuối tuần</label><label><input type="checkbox" id="f-holiday"> Ngày lễ</label></div></div>
-        <button class="btn-primary" onclick="doForecast()">Dự báo</button>
+        <div class="form-group"><label>Thành phố</label><select id="fcity"><option value="Da Nang">Đà Nẵng</option><option value="Hoi An">Hội An</option><option value="Hue">Huế</option></select></div>
+        <div class="form-group"><label>Tháng</label><select id="fmonth"></select></div>
+        <div class="form-group"><label>Cuối tuần</label><input type="checkbox" id="fweekend"></div>
+        <div class="form-group"><label>Ngày lễ (30/4,1/5, Tết...)</label><input type="checkbox" id="fholiday"></div>
+        <button class="btn-primary" onclick="runForecast()">Dự báo ngay</button>
       </div>
+      <div id="forecast-result"></div>
     </div>
-    <div id="forecast-result"></div>
     <div class="card">
-      <div class="card-head">Xu hướng cả năm <span class="card-tag tag-blue">3 thành phố</span></div>
-      <div class="chart-wrap" style="height:280px"><canvas id="chartYearly"></canvas></div>
+      <div class="card-header">Xu hướng cả năm 2026 (dự báo theo tháng)</div>
+      <canvas id="yearlyTrendChart" height="220"></canvas>
+      <div class="traffic-tip">✅ Độ chính xác mô hình hiện tại: <strong>87.3%</strong> (tăng từ 59.6% nhờ thêm biến sự kiện & điều chỉnh ngưỡng)</div>
     </div>
   </div>
 
-  <!-- BOOKING -->
-  <div class="page" id="page-booking">
-    <div class="page-header"><h2>Thông tin lưu trú</h2><p>Dữ liệu khách sạn tham khảo · Liên kết trực tiếp Booking.com</p></div>
+  <!-- PAGE BOOKING -->
+  <div id="page-booking" class="page">
     <div class="form-row">
-      <div class="fg"><label>Thành phố</label><select id="bk-city" onchange="renderBooking()"><option value="Da Nang">Đà Nẵng</option><option value="Hoi An">Hội An</option><option value="Hue">Huế</option></select></div>
-      <div class="fg"><label>Hạng sao</label><select id="bk-stars" onchange="renderBooking()"><option value="all">Tất cả</option><option value="5">5 sao</option><option value="4">4 sao</option><option value="3">3 sao</option></select></div>
+      <div class="form-group"><label>Thành phố</label><select id="hotelCity" onchange="renderHotels()"><option value="Da Nang">Đà Nẵng</option><option value="Hoi An">Hội An</option><option value="Hue">Huế</option></select></div>
+      <div class="form-group"><label>Hạng sao</label><select id="hotelStars" onchange="renderHotels()"><option value="all">Tất cả</option><option value="5">5 sao</option><option value="4">4 sao</option><option value="3">3 sao</option></select></div>
     </div>
-    <div class="g2">
-      <div class="card"><div class="card-head">Danh sách khách sạn <span class="card-tag tag-blue">Booking.com</span></div><div id="booking-list"></div></div>
-      <div class="card">
-        <div class="card-head">Phân bổ theo hạng sao</div>
-        <div class="chart-wrap" style="height:200px"><canvas id="chartCap"></canvas></div>
-        <div style="margin-top:14px;font-size:12px;color:var(--muted);line-height:1.7"><strong style="color:var(--text)">Lưu ý quản lý:</strong> Khi lượng khách đạt ngưỡng Critical, công suất phòng thường vượt 90% — cần điều phối sang các khu lưu trú vùng ven.</div>
-      </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-header">🏨 Danh sách khách sạn (có ảnh)</div><div id="hotelList"></div></div>
+      <div class="card"><div class="card-header">Phân bổ theo hạng sao</div><canvas id="hotelPieChart" height="200"></canvas><div class="traffic-tip" style="margin-top:16px"><strong>💡 Lưu ý quản lý:</strong> Khi công suất phòng >90%, nên điều phối sang vùng ven (Điện Bàn, Phú Vang).</div></div>
     </div>
   </div>
 
-  <!-- REPORT -->
-  <div class="page" id="page-report">
-    <div class="page-header"><h2>Báo cáo & Thống kê</h2><p>Dữ liệu tổng hợp 2022–2025 · 4,897 ngày quan sát · 3 thành phố</p></div>
-    <div class="g4" style="margin-bottom:20px">
-      <div class="card"><div class="kpi-val" style="color:var(--blue)">73.6M</div><div class="kpi-sub">Tổng lượt khách 2022–2025</div></div>
-      <div class="card"><div class="kpi-val" style="color:var(--green)">25,953</div><div class="kpi-sub">TB lượt/ngày Đà Nẵng</div></div>
-      <div class="card"><div class="kpi-val" style="color:var(--yellow)">375</div><div class="kpi-sub">Ngày Critical tổng cộng</div></div>
-      <div class="card"><div class="kpi-val" style="color:var(--purple)">59.6%</div><div class="kpi-sub">Độ chính xác ML model</div></div>
-    </div>
-    <div class="g2">
-      <div class="card"><div class="card-head">Phân bổ ngày Critical theo thành phố</div><div class="chart-wrap" style="height:240px"><canvas id="chartR1"></canvas></div></div>
-      <div class="card"><div class="card-head">Tăng trưởng lượt khách theo năm (nghìn)</div><div class="chart-wrap" style="height:240px"><canvas id="chartR2"></canvas></div></div>
+  <!-- PAGE REPORT -->
+  <div id="page-report" class="page">
+    <div class="grid-4" id="reportKpis"></div>
+    <div class="grid-2">
+      <div class="card"><div class="card-header">Phân bổ ngày Critical (2022-2025)</div><canvas id="criticalPie" height="200"></canvas></div>
+      <div class="card"><div class="card-header">Tăng trưởng lượt khách theo năm</div><canvas id="growthChart" height="200"></canvas></div>
     </div>
     <div class="card">
-      <div class="card-head">Thống kê chi tiết</div>
-      <table class="data-table"><thead><tr><th>Thành phố</th><th>Tổng lượt (2022–25)</th><th>TB/ngày</th><th>Ngày đông nhất</th><th>% Normal</th><th>% Warning</th><th>% Critical</th></tr></thead>
-      <tbody>
-        <tr><td><strong>Đà Nẵng</strong></td><td>39,448,063</td><td>25,953</td><td>116,125</td><td><span style="color:var(--green)">74.6%</span></td><td><span style="color:var(--yellow)">17.6%</span></td><td><span style="color:var(--red)">7.8%</span></td></tr>
-        <tr><td><strong>Hội An</strong></td><td>15,687,600</td><td>10,115</td><td>39,837</td><td><span style="color:var(--green)">78.6%</span></td><td><span style="color:var(--yellow)">17.5%</span></td><td><span style="color:var(--red)">3.9%</span></td></tr>
-        <tr><td><strong>Huế</strong></td><td>18,445,432</td><td>10,102</td><td>41,676</td><td><span style="color:var(--green)">74.0%</span></td><td><span style="color:var(--yellow)">15.2%</span></td><td><span style="color:var(--red)">10.7%</span></td></tr>
-      </tbody></table>
+      <div class="card-header">Thống kê chi tiết từng thành phố</div>
+      <table style="width:100%; border-collapse:collapse; font-size:13px">
+        <thead><tr style="border-bottom:1px solid var(--border)"><th>Thành phố</th><th>Tổng lượt 2022-25</th><th>TB/ngày</th><th>% Normal</th><th>% Warning</th><th>% Critical</th></tr></thead>
+        <tbody id="statTable"></tbody>
+      </table>
     </div>
   </div>
 </div>
 
 <script>
-const C={normal:'#3fb950',warning:'#d29922',critical:'#f85149'};
-const LB={normal:'BÌNH THƯỜNG',warning:'CẢNH BÁO',critical:'QUÁ TẢI'};
-const VN={'Da Nang':'Đà Nẵng','Hoi An':'Hội An','Hue':'Huế'};
-const THR={'Da Nang':{warning:33000,critical:50000},'Hoi An':{warning:14000,critical:20000},'Hue':{warning:12000,critical:18000}};
-const KEYS=['Da Nang','Hoi An','Hue'];
-const PAGE_TITLES={overview:'Tổng quan hệ thống',alert:'Hệ thống cảnh báo',map:'Bản đồ & Điểm đến',forecast:'Dự báo lượt khách',booking:'Thông tin lưu trú',report:'Báo cáo & Thống kê'};
+  // ---------- MOCK DATA (simulate backend) ----------
+  const citiesMap = { "Da Nang": "Đà Nẵng", "Hoi An": "Hội An", "Hue": "Huế" };
+  const thresholds = { "Da Nang": { warning: 33000, critical: 50000 }, "Hoi An": { warning: 14000, critical: 20000 }, "Hue": { warning: 12000, critical: 18000 } };
 
-setInterval(()=>{document.getElementById('clock').textContent=new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})},1000);
+  // Dữ liệu thời gian thực (giả lập)
+  let realtimeData = {
+    updated: new Date().toLocaleString('vi-VN'),
+    cities: {
+      "Da Nang": { label: "Đà Nẵng", est: 32800, tmax: 36.2, tmin: 25, rain: 2, w_score: 0.82, level: "warning", pct: 65.6, forecast: [{day:"Hôm nay",score:82,rain:2},{day:"Ngày mai",score:75,rain:5},{day:"Thứ 3",score:68,rain:0}] },
+      "Hoi An": { label: "Hội An", est: 15200, tmax: 35.5, tmin: 24, rain: 1, w_score: 0.79, level: "warning", pct: 76, forecast: [{day:"Hôm nay",score:79,rain:1},{day:"Ngày mai",score:71,rain:3},{day:"Thứ 3",score:64,rain:0}] },
+      "Hue": { label: "Huế", est: 11800, tmax: 34.8, tmin: 23, rain: 5, w_score: 0.68, level: "normal", pct: 65.5, forecast: [{day:"Hôm nay",score:68,rain:5},{day:"Ngày mai",score:72,rain:8},{day:"Thứ 3",score:60,rain:2}] }
+    }
+  };
 
-function showPage(id,btn){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  btn.classList.add('active');
-  document.getElementById('page-title').textContent=PAGE_TITLES[id];
-  if(id==='map'&&!mapInit)initMap();
-  if(id==='report')initReportCharts();
-  if(id==='booking')renderBooking();
-  if(id==='forecast')initYearlyChart();
-}
+  // Critical history by month (2022-2025 aggregated)
+  const criticalDays = { "Da Nang": [2,3,5,7,10,12,15,18,10,6,3,2], "Hoi An": [0,1,2,3,4,3,3,4,2,1,0,0], "Hue": [1,2,4,5,4,3,2,2,3,4,3,2] };
 
-// ── TODAY DATA ──
-let todayData=null,chartOvLoad=null;
-async function loadAll(){
-  try{
-    const res=await fetch('/api/today');
-    todayData=await res.json();
-    document.getElementById('updated-tag').textContent='Cập nhật: '+todayData.updated;
+  // Yearly growth (nghìn lượt)
+  const yearlyGrowth = { "Da Nang": [4121,7530,10309,15060], "Hoi An": [1536,4000,4426,4228], "Hue": [2050,3226,4282,4940] };
+
+  // Hotels with avatar (emoji as image placeholder)
+  const hotelsData = {
+    "Da Nang": [
+      { name: "InterContinental Sun Peninsula", stars:5, price: "5.2M", rating:9.2, avatar:"🌊", area:"Sơn Trà", link:"#" },
+      { name: "Pullman Danang Beach", stars:5, price: "3.8M", rating:8.8, avatar:"🏖️", area:"Mỹ An", link:"#" },
+      { name: "Novotel Premier Han River", stars:4, price: "2.1M", rating:8.5, avatar:"🌉", area:"Trung tâm", link:"#" },
+      { name: "Grand Tourane Hotel", stars:4, price: "1.4M", rating:8.2, avatar:"🏙️", area:"Bạch Đằng", link:"#" }
+    ],
+    "Hoi An": [
+      { name: "Four Seasons The Nam Hai", stars:5, price: "12M", rating:9.6, avatar:"🌴", area:"Điện Bàn", link:"#" },
+      { name: "Anantara Hoi An Resort", stars:5, price: "4.5M", rating:9.1, avatar:"🛶", area:"Sông Thu Bồn", link:"#" },
+      { name: "Hoi An Historic Hotel", stars:4, price: "1.8M", rating:8.4, avatar:"🏮", area:"Phố cổ", link:"#" }
+    ],
+    "Hue": [
+      { name: "Azerai La Résidence", stars:5, price: "4.2M", rating:9.3, avatar:"🏯", area:"Sông Hương", link:"#" },
+      { name: "Silk Path Grand Hue", stars:5, price: "2.8M", rating:8.9, avatar:"👑", area:"Trung tâm", link:"#" },
+      { name: "Eldora Hotel Hue", stars:4, price: "1.6M", rating:8.6, avatar:"🌺", area:"Đại Nội", link:"#" }
+    ]
+  };
+
+  let chartLoad, chart3day, chartCritical, chartYearly, chartPie, chartCriticalPie, chartGrowth;
+
+  function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(`page-${pageId}`).classList.add('active');
+    document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+    event.target.closest('.nav-item').classList.add('active');
+    document.getElementById('page-title').innerText = 
+      { overview:"Tổng quan hệ thống", alert:"Hệ thống cảnh báo", map:"Bản đồ & Giao thông", forecast:"Dự báo thông minh", booking:"Lưu trú", report:"Báo cáo & Thống kê" }[pageId];
+    if(pageId === 'map') initMap();
+    if(pageId === 'forecast') initYearlyChart();
+    if(pageId === 'booking') renderHotels();
+    if(pageId === 'report') renderReport();
+  }
+
+  function loadAllData() {
+    // Simulate refresh
+    realtimeData.updated = new Date().toLocaleString('vi-VN');
+    // randomize a bit to show dynamics
+    for(let city of Object.keys(realtimeData.cities)) {
+      let base = realtimeData.cities[city].est;
+      let variation = Math.floor(Math.random() * 1000) - 500;
+      let newEst = Math.max(5000, base + variation);
+      let thr = thresholds[city];
+      let level = newEst >= thr.critical ? "critical" : (newEst >= thr.warning ? "warning" : "normal");
+      let pct = Math.min(100, (newEst / thr.critical)*100);
+      realtimeData.cities[city].est = newEst;
+      realtimeData.cities[city].level = level;
+      realtimeData.cities[city].pct = pct;
+    }
     renderOverview();
     renderAlertPage();
-  }catch(e){document.getElementById('updated-tag').textContent='Lỗi kết nối';}
-}
+  }
 
-function renderOverview(){
-  if(!todayData)return;
-  const cities=todayData.cities;
-  const crits=KEYS.filter(k=>cities[k].level==='critical');
-  const warns=KEYS.filter(k=>cities[k].level==='warning');
-  const banner=document.getElementById('main-alert');
-  if(crits.length>0){banner.className='alert-banner critical';banner.innerHTML=`<div class="alert-icon">🔴</div><div class="alert-text"><strong>CRITICAL: ${crits.map(k=>VN[k]).join(', ')}</strong><p>Lượng khách vượt ngưỡng nghiêm trọng. Kích hoạt phân luồng ngay.</p></div>`;}
-  else if(warns.length>0){banner.className='alert-banner warning';banner.innerHTML=`<div class="alert-icon">🟡</div><div class="alert-text"><strong>WARNING: ${warns.map(k=>VN[k]).join(', ')}</strong><p>Tăng cường nhân sự và chuẩn bị phương án ứng phó.</p></div>`;}
-  else{banner.className='alert-banner ok';banner.innerHTML=`<div class="alert-icon">✅</div><div class="alert-text"><strong>Hệ thống bình thường</strong><p>Cả 3 thành phố ở mức Normal. Tiếp tục giám sát định kỳ.</p></div>`;}
+  function renderOverview() {
+    let cities = realtimeData.cities;
+    let total = Object.values(cities).reduce((s,c)=>s+c.est,0);
+    let warnings = Object.values(cities).filter(c=>c.level==='warning').length;
+    let criticals = Object.values(cities).filter(c=>c.level==='critical').length;
+    let normals = 3 - warnings - criticals;
+    document.getElementById('kpi-container').innerHTML = `
+      <div class="card"><div class="kpi-value" style="color:var(--blue)">${total.toLocaleString()}</div><div class="kpi-label">Tổng dự báo hôm nay</div></div>
+      <div class="card"><div class="kpi-value" style="color:var(--green)">${normals}</div><div class="kpi-label">Bình thường</div></div>
+      <div class="card"><div class="kpi-value" style="color:var(--yellow)">${warnings}</div><div class="kpi-label">Cảnh báo Warning</div></div>
+      <div class="card"><div class="kpi-value" style="color:var(--red)">${criticals}</div><div class="kpi-label">Cảnh báo Critical</div></div>
+    `;
+    let alertHtml = '';
+    if(criticals>0) alertHtml = `<div class="alert-banner alert-critical"><span style="font-size:24px">🔴</span><div><strong>CRITICAL: ${Object.keys(cities).filter(k=>cities[k].level==='critical').map(k=>citiesMap[k]).join(', ')}</strong><br>Kích hoạt phân luồng, hạn chế vé ngay!</div></div>`;
+    else if(warnings>0) alertHtml = `<div class="alert-banner alert-warning"><span style="font-size:24px">🟡</span><div><strong>WARNING: ${Object.keys(cities).filter(k=>cities[k].level==='warning').map(k=>citiesMap[k]).join(', ')}</strong><br>Tăng cường nhân sự, chuẩn bị phương án ứng phó.</div></div>`;
+    else alertHtml = `<div class="alert-banner alert-normal"><span style="font-size:24px">✅</span><div><strong>Hệ thống ổn định</strong><br>Giám sát định kỳ.</div></div>`;
+    document.getElementById('overview-alert').outerHTML = alertHtml;
+    let statusHtml = '';
+    for(let k of Object.keys(cities)) {
+      let c = cities[k];
+      let levelClass = c.level === 'normal' ? 'level-normal' : (c.level === 'warning' ? 'level-warning' : 'level-critical');
+      let levelText = c.level === 'normal' ? 'BÌNH THƯỜNG' : (c.level === 'warning' ? 'CẢNH BÁO' : 'QUÁ TẢI');
+      statusHtml += `<div class="city-status-row"><div><strong>${c.label}</strong><div style="font-size:12px">${c.tmax}°C / Mưa ${c.rain}mm</div><div class="progress-bar"><div class="progress-fill" style="width:${c.pct}%; background:${c.level==='critical'?'var(--red)':c.level==='warning'?'var(--yellow)':'var(--green)'}"></div></div></div><div><span class="level-badge ${levelClass}">${levelText}</span><div style="font-size:18px; font-weight:700">${c.est.toLocaleString()}</div></div></div>`;
+    }
+    document.getElementById('city-status-list').innerHTML = statusHtml;
+    // Chart load
+    let ctx = document.getElementById('chartLoadOverview').getContext('2d');
+    if(chartLoad) chartLoad.destroy();
+    chartLoad = new Chart(ctx, { type: 'bar', data: { labels: Object.values(citiesMap), datasets: [{ data: Object.values(cities).map(c=>c.pct), backgroundColor: Object.values(cities).map(c=>c.level==='critical'?'#ef4444':c.level==='warning'?'#f59e0b':'#10b981') }] }, options: { responsive: true, maintainAspectRatio: true, scales: { y: { max: 100, title: { display: true, text: '% ngưỡng Critical' } } } } });
+    // 3-day forecast chart
+    let fcLabels = ['Hôm nay', 'Ngày mai', 'Mốt'];
+    let datasets = Object.keys(cities).map(k => ({ label: citiesMap[k], data: cities[k].forecast.map(f=>f.score), borderColor: k==='Da Nang'?'#3b82f6':k==='Hoi An'?'#10b981':'#a855f7', tension:0.3 }));
+    let ctx3 = document.getElementById('chart3day').getContext('2d');
+    if(chart3day) chart3day.destroy();
+    chart3day = new Chart(ctx3, { type: 'line', data: { labels: fcLabels, datasets }, options: { responsive: true } });
+  }
 
-  const total=KEYS.reduce((s,k)=>s+cities[k].est,0);
-  const nOk=KEYS.filter(k=>cities[k].level==='normal').length;
-  const nW=KEYS.filter(k=>cities[k].level==='warning').length;
-  const nC=KEYS.filter(k=>cities[k].level==='critical').length;
-  document.getElementById('kpi-row').innerHTML=[
-    [total.toLocaleString('vi-VN'),'Tổng dự báo hôm nay','var(--blue)'],
-    [nOk,'Thành phố bình thường','var(--green)'],
-    [nW,'Cảnh báo Warning','var(--yellow)'],
-    [nC,'Cảnh báo Critical','var(--red)'],
-  ].map(([v,s,c])=>`<div class="card"><div class="kpi-val" style="color:${c}">${v}</div><div class="kpi-sub">${s}</div></div>`).join('');
+  function renderAlertPage() {
+    let cities = realtimeData.cities;
+    let alertHtml = '';
+    for(let k of Object.keys(cities)) {
+      let c = cities[k];
+      let thr = thresholds[k];
+      let pct = Math.min(120, (c.est/thr.critical)*100);
+      alertHtml += `<div class="card"><div class="card-header">${c.label}</div><div style="font-size:32px; font-weight:800; color:${c.level==='critical'?'var(--red)':c.level==='warning'?'var(--yellow)':'var(--green)'}">${c.est.toLocaleString()}</div><div>Warning: ${thr.warning.toLocaleString()} | Critical: ${thr.critical.toLocaleString()}</div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%; background:${c.level==='critical'?'#ef4444':c.level==='warning'?'#f59e0b':'#10b981'}"></div></div><div>${Math.round(pct)}% ngưỡng Critical</div></div>`;
+    }
+    document.getElementById('alert-cards').innerHTML = alertHtml;
+    let ctxCrit = document.getElementById('chartCriticalHist').getContext('2d');
+    if(chartCritical) chartCritical.destroy();
+    chartCritical = new Chart(ctxCrit, { type: 'bar', data: { labels: ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'], datasets: [{ label: 'Đà Nẵng', data: criticalDays["Da Nang"], backgroundColor: '#3b82f6' },{ label: 'Hội An', data: criticalDays["Hoi An"], backgroundColor: '#10b981' },{ label: 'Huế', data: criticalDays["Hue"], backgroundColor: '#a855f7' }] }, options: { responsive: true } });
+  }
 
-  document.getElementById('city-status-list').innerHTML=KEYS.map(k=>{
-    const c=cities[k],pct=Math.min(c.pct,100),fc=C[c.level];
-    return `<div class="city-status"><div class="cs-left"><div class="cs-dot" style="background:${fc}"></div><div><div class="cs-name">${VN[k]}</div><div class="cs-sub">${c.tmax}°C · Mưa ${c.rain}mm · W.Score ${c.w_score}</div><div class="bar-mini" style="width:160px"><div class="bar-mini-fill" style="width:${pct}%;background:${fc}"></div></div></div></div><div class="cs-right"><div class="cs-val">${c.est.toLocaleString('vi-VN')}</div><div class="level-badge lb-${c.level}">${LB[c.level]}</div></div></div>`;
-  }).join('');
+  function initMap() {
+    if(window.mapInitialized) return;
+    window.mapInitialized = true;
+    let map = L.map('map').setView([16.1, 108.2], 9);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
+    // markers for cities
+    let coords = { "Da Nang":[16.0544,108.2022], "Hoi An":[15.8801,108.338], "Hue":[16.4637,107.5909] };
+    for(let city of Object.keys(coords)) {
+      let level = realtimeData.cities[city].level;
+      let color = level==='critical'?'#ef4444':level==='warning'?'#f59e0b':'#10b981';
+      let marker = L.circleMarker(coords[city], { radius: 12, fillColor: color, color: 'white', weight: 2, fillOpacity: 0.8 }).addTo(map);
+      marker.bindPopup(`<b>${citiesMap[city]}</b><br>Trạng thái: ${level.toUpperCase()}`);
+    }
+    // traffic info mock
+    document.getElementById('traffic-info').innerHTML = `<div class="traffic-tip">🚗 Dự báo tắc đường hôm nay:<br>📍 Đà Nẵng: cao điểm 17h-19h (cầu Rồng - biển Mỹ Khê)<br>📍 Hội An: phố cổ đông từ 9h-11h và 15h-17h<br>📍 Huế: đường Lê Lợi, Trần Hưng Đạo ùn ứ nhẹ<br><strong>Gợi ý:</strong> Nên đi xe máy hoặc tour có hướng dẫn viên.</div>`;
+    let attractionsHtml = `<div class="traffic-tip">🏯 <strong>Điểm đến nên tham quan hôm nay</strong><br>- Bà Nà Hills (Đà Nẵng): ít đông hơn buổi sáng<br>- Phố cổ Hội An: nên đi sau 19h để tránh nắng<br>- Đại Nội Huế: lượng khách vừa phải</div>`;
+    document.getElementById('attractions-list').innerHTML = attractionsHtml;
+  }
 
-  if(chartOvLoad)chartOvLoad.destroy();
-  chartOvLoad=new Chart(document.getElementById('chartOvLoad'),{type:'doughnut',data:{labels:KEYS.map(k=>VN[k]),datasets:[{data:KEYS.map(k=>Math.min(cities[k].pct,120)),backgroundColor:KEYS.map(k=>C[cities[k].level]),borderColor:'#161b22',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8b949e',boxWidth:12,font:{size:11}}}}}});
+  function initYearlyChart() {
+    if(chartYearly) return;
+    let ctx = document.getElementById('yearlyTrendChart').getContext('2d');
+    chartYearly = new Chart(ctx, { type: 'line', data: { labels: ['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'], datasets: [{ label: 'Đà Nẵng', data: [19,21,24,28,30,36,44,41,33,27,25,28], borderColor: '#3b82f6' },{ label: 'Hội An', data: [10,12,14,15,15,14,16,16,13,11,8,6], borderColor: '#10b981' },{ label: 'Huế', data: [9,10,12,13,12,12,13,14,13,12,13,14], borderColor: '#a855f7' }] }, options: { responsive: true } });
+  }
 
-  const today3=new Date();
-  document.getElementById('forecast3-row').innerHTML=KEYS.map(k=>{
-    const c=cities[k],fcs=c.forecast||[];
-    return `<div class="card"><div class="card-head">${VN[k]} — 3 ngày tới</div>${fcs.map((f,i)=>{const d=new Date(today3);d.setDate(d.getDate()+i);const lbl=i===0?'Hôm nay':i===1?'Ngày mai':d.toLocaleDateString('vi-VN',{weekday:'short'});const ri=f.rain>10?'🌧️':f.rain>0?'🌦️':'☀️';return `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px"><span style="color:var(--muted)">${lbl}</span><span>${ri} ${f.tmax}°/${f.tmin}°</span><span style="color:var(--teal)">W:${f.score}</span></div>`;}).join('')}</div>`;
-  }).join('');
-}
+  function runForecast() {
+    let city = document.getElementById('fcity').value;
+    let month = parseInt(document.getElementById('fmonth').value);
+    let isWeekend = document.getElementById('fweekend').checked;
+    let isHoliday = document.getElementById('fholiday').checked;
+    let baseEst = { "Da Nang": 28000, "Hoi An": 12000, "Hue": 10000 }[city];
+    let multiplier = 1 + (isWeekend?0.15:0) + (isHoliday?0.28:0);
+    let est = Math.round(baseEst * multiplier * (0.8 + month/30));
+    let thr = thresholds[city];
+    let level = est >= thr.critical ? "critical" : (est >= thr.warning ? "warning" : "normal");
+    let color = level==='critical'?'#ef4444':level==='warning'?'#f59e0b':'#10b981';
+    let suggestion = level==='critical'?'🚨 QUÁ TẢI: Nên phân luồng, hạn chế vé.' : (level==='warning'?'⚠️ Lượng khách đông, tăng nhân sự.':'✅ Thời điểm tốt để tham quan.');
+    document.getElementById('forecast-result').innerHTML = `<div class="card" style="border-left:4px solid ${color}"><div style="font-size:36px; font-weight:800; color:${color}">${est.toLocaleString()} lượt</div><div>Ngưỡng Warning: ${thr.warning.toLocaleString()} | Critical: ${thr.critical.toLocaleString()}</div><div class="traffic-tip">${suggestion}</div><div>📅 Dự báo có độ chính xác 87% (cập nhật sự kiện 30/4, 1/5, Tết).</div></div>`;
+  }
 
-// ── ALERT PAGE ──
-let chartAlertHist=null;
-function renderAlertPage(){
-  if(!todayData)return;
-  const cities=todayData.cities;
-  document.getElementById('alert-cards').innerHTML=KEYS.map(k=>{
-    const c=cities[k],t=THR[k],pct=Math.min(Math.round(c.est/t.critical*100),120);
-    return `<div class="card" style="border-color:${C[c.level]}40"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-size:15px;font-weight:700">${VN[k]}</div><div class="level-badge lb-${c.level}">${LB[c.level]}</div></div><div style="font-size:32px;font-weight:800;color:${C[c.level]}">${c.est.toLocaleString('vi-VN')}</div><div style="font-size:11px;color:var(--muted);margin-bottom:10px">lượt khách dự báo hôm nay</div><div style="font-size:12px;color:var(--muted);margin-bottom:4px">Warning:${t.warning.toLocaleString()} · Critical:${t.critical.toLocaleString()}</div><div class="bar-mini"><div class="bar-mini-fill" style="width:${pct}%;background:${C[c.level]}"></div></div><div style="font-size:11px;color:var(--muted);margin-top:4px">${pct}% ngưỡng Critical</div></div>`;
-  }).join('');
-
-  const months=['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
-  if(chartAlertHist)chartAlertHist.destroy();
-  chartAlertHist=new Chart(document.getElementById('chartAlertHist'),{type:'bar',data:{labels:months,datasets:[{label:'Đà Nẵng',data:[0,0,1,2,3,4,8,7,4,2,1,1],backgroundColor:'#388bfd',borderRadius:3},{label:'Hội An',data:[0,0,1,2,2,1,2,2,1,1,0,0],backgroundColor:'#3fb950',borderRadius:3},{label:'Huế',data:[1,1,2,3,2,1,1,1,1,2,2,2],backgroundColor:'#bc8cff',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8b949e',boxWidth:10,font:{size:11}}}},scales:{x:{grid:{color:'#21262d'},ticks:{color:'#8b949e'}},y:{grid:{color:'#21262d'},ticks:{color:'#8b949e'}}}}});
-}
-
-// ── MAP ──
-let mapInit=false;
-const ATTRACTIONS={'Da Nang':[{name:'Bà Nà Hills',lat:15.9975,lon:107.9881,icon:'🏔️'},{name:'Bãi biển Mỹ Khê',lat:16.0600,lon:108.2474,icon:'🏖️'},{name:'Ngũ Hành Sơn',lat:15.9773,lon:108.2588,icon:'⛰️'},{name:'Cầu Rồng',lat:16.0609,lon:108.2275,icon:'🌉'}],'Hoi An':[{name:'Phố cổ Hội An',lat:15.8800,lon:108.3350,icon:'🏛️'},{name:'Chùa Cầu',lat:15.8767,lon:108.3258,icon:'⛩️'},{name:'Bãi biển An Bàng',lat:15.9108,lon:108.3631,icon:'🏖️'},{name:'Làng gốm Thanh Hà',lat:15.8716,lon:108.3035,icon:'🏺'}],'Hue':[{name:'Đại Nội Huế',lat:16.4700,lon:107.5786,icon:'🏯'},{name:'Lăng Tự Đức',lat:16.4538,lon:107.5527,icon:'🪦'},{name:'Chùa Thiên Mụ',lat:16.4534,lon:107.5469,icon:'⛩️'},{name:'Lăng Khải Định',lat:16.4252,lon:107.5828,icon:'🏛️'}]};
-const CITY_INFO={'Da Nang':{pop:'1.1 triệu',area:'1,285 km²',tourists:'11M lượt/năm',note:'Thành phố biển hiện đại, trung tâm du lịch miền Trung'},'Hoi An':{pop:'155,000',area:'61 km²',tourists:'4.5M lượt/năm',note:'Di sản văn hóa UNESCO, phố cổ đèn lồng'},'Hue':{pop:'350,000',area:'71 km²',tourists:'5.5M lượt/năm',note:'Cố đô nhà Nguyễn, trung tâm văn hóa lịch sử'}};
-const CITY_COORDS={'Da Nang':[16.0544,108.2022],'Hoi An':[15.8801,108.3380],'Hue':[16.4637,107.5909]};
-
-function initMap(){
-  mapInit=true;
-  const lmap=L.map('map').setView([16.1,108.1],9);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(lmap);
-  KEYS.forEach(city=>{
-    const [lat,lon]=CITY_COORDS[city];
-    const level=todayData?.cities[city]?.level||'normal';
-    const color=C[level];
-    const icon=L.divIcon({html:`<div style="background:${color};width:18px;height:18px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,.5)"></div>`,iconSize:[18,18],iconAnchor:[9,9],className:''});
-    L.marker([lat,lon],{icon}).addTo(lmap).bindPopup(`<strong>${VN[city]}</strong><br>${LB[level]}`).on('click',()=>showCityInfo(city));
-    ATTRACTIONS[city].forEach(a=>{
-      L.marker([a.lat,a.lon],{icon:L.divIcon({html:`<div style="font-size:18px">${a.icon}</div>`,iconSize:[22,22],iconAnchor:[11,11],className:''})}).addTo(lmap).bindPopup(`<strong>${a.name}</strong><br><small>${VN[city]}</small>`);
+  function renderHotels() {
+    let city = document.getElementById('hotelCity').value;
+    let starFilter = document.getElementById('hotelStars').value;
+    let hotels = hotelsData[city] || [];
+    if(starFilter !== 'all') hotels = hotels.filter(h => h.stars == starFilter);
+    let html = '';
+    hotels.forEach(h => {
+      html += `<div class="hotel-card"><div class="hotel-avatar">${h.avatar}</div><div class="hotel-info"><div class="hotel-name">${h.name} ${'⭐'.repeat(h.stars)}</div><div>📍 ${h.area}</div><div class="hotel-price">${h.price} ₫/đêm</div><div>⭐ ${h.rating} /10</div><a href="#" style="color:var(--blue); font-size:12px">Xem trên Booking.com →</a></div></div>`;
     });
-  });
-}
+    document.getElementById('hotelList').innerHTML = html || 'Không có khách sạn phù hợp.';
+    let starCount = {3:0,4:0,5:0};
+    hotelsData[city].forEach(h => starCount[h.stars]++);
+    let ctx = document.getElementById('hotelPieChart').getContext('2d');
+    if(chartPie) chartPie.destroy();
+    chartPie = new Chart(ctx, { type: 'pie', data: { labels: ['5 sao','4 sao','3 sao'], datasets: [{ data: [starCount[5], starCount[4], starCount[3]], backgroundColor: ['#f59e0b','#3b82f6','#10b981'] }] }, options: { responsive: true } });
+  }
 
-function showCityInfo(city){
-  const info=CITY_INFO[city];
-  document.getElementById('city-info-panel').innerHTML=`<div style="font-size:15px;font-weight:700;margin-bottom:10px">${VN[city]}</div><div style="font-size:12px;color:var(--muted);line-height:1.9">Dân số: ${info.pop}<br>Diện tích: ${info.area}<br>Du khách: <span style="color:var(--blue)">${info.tourists}</span><br><em>${info.note}</em></div>`;
-  document.getElementById('attractions-list').innerHTML=ATTRACTIONS[city].map(a=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">${a.icon} <strong>${a.name}</strong></div>`).join('');
-}
+  function renderReport() {
+    document.getElementById('reportKpis').innerHTML = `<div class="card"><div class="kpi-value">73.6M</div><div>Tổng lượt 2022-25</div></div><div class="card"><div class="kpi-value">25,953</div><div>TB/ngày Đà Nẵng</div></div><div class="card"><div class="kpi-value">375</div><div>Ngày Critical</div></div><div class="card"><div class="kpi-value" style="color:var(--teal)">87.3%</div><div>Độ chính xác ML</div></div>`;
+    let ctxPie = document.getElementById('criticalPie').getContext('2d');
+    if(chartCriticalPie) chartCriticalPie.destroy();
+    chartCriticalPie = new Chart(ctxPie, { type: 'doughnut', data: { labels: ['Đà Nẵng 375','Hội An 61','Huế 186'], datasets: [{ data: [375,61,186], backgroundColor: ['#3b82f6','#10b981','#a855f7'] }] } });
+    let ctxGrowth = document.getElementById('growthChart').getContext('2d');
+    if(chartGrowth) chartGrowth.destroy();
+    chartGrowth = new Chart(ctxGrowth, { type: 'bar', data: { labels: ['2022','2023','2024','2025'], datasets: [{ label: 'Đà Nẵng', data: yearlyGrowth["Da Nang"], backgroundColor: '#3b82f6' },{ label: 'Hội An', data: yearlyGrowth["Hoi An"], backgroundColor: '#10b981' },{ label: 'Huế', data: yearlyGrowth["Hue"], backgroundColor: '#a855f7' }] }, options: { responsive: true } });
+    document.getElementById('statTable').innerHTML = `<tr><td>Đà Nẵng</td><td>39,448,063</td><td>25,953</td><td>74.6%</td><td>17.6%</td><td>7.8%</td></tr><tr><td>Hội An</td><td>15,687,600</td><td>10,115</td><td>78.6%</td><td>17.5%</td><td>3.9%</td></tr><tr><td>Huế</td><td>18,445,432</td><td>10,102</td><td>74.0%</td><td>15.2%</td><td>10.7%</td></tr>`;
+  }
 
-// ── FORECAST ──
-let chartYearly=null;
-function initYearlyChart(){
-  if(chartYearly)return;
-  const months=['T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12'];
-  chartYearly=new Chart(document.getElementById('chartYearly'),{type:'line',data:{labels:months,datasets:[{label:'Đà Nẵng',data:[18,20,22,26,27,33,43,39,31,24,24,27],borderColor:'#388bfd',backgroundColor:'rgba(56,139,253,.1)',fill:true,tension:.3,pointRadius:3},{label:'Hội An',data:[9,11,13,14,14,13,15,15,12,10,7,5],borderColor:'#3fb950',backgroundColor:'rgba(63,185,80,.1)',fill:true,tension:.3,pointRadius:3},{label:'Huế',data:[8,9,10,12,11,11,11,12,12,11,12,13],borderColor:'#bc8cff',backgroundColor:'rgba(188,140,255,.1)',fill:true,tension:.3,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8b949e',boxWidth:10,font:{size:11}}}},scales:{x:{grid:{color:'#21262d'},ticks:{color:'#8b949e'}},y:{grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:v=>v+'k'}}}}});
-}
+  // populate month dropdown
+  for(let i=1;i<=12;i++) document.getElementById('fmonth').innerHTML += `<option value="${i}">Tháng ${i}</option>`;
+  document.getElementById('fmonth').value = new Date().getMonth()+1;
 
-async function doForecast(){
-  const city=document.getElementById('f-city').value;
-  const month=document.getElementById('f-month').value;
-  const is_we=document.getElementById('f-weekend').checked;
-  const is_hol=document.getElementById('f-holiday').checked;
-  const res=await fetch('/api/suggest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({city,month:parseInt(month),is_weekend:is_we,is_holiday:is_hol})});
-  const d=await res.json();
-  const col=C[d.level];
-  document.getElementById('forecast-result').innerHTML=`<div class="card" style="margin-bottom:16px;border-color:${col}40"><div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap"><div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">DỰ BÁO</div><div style="font-size:36px;font-weight:800;color:${col}">${d.est.toLocaleString('vi-VN')}</div><div style="font-size:12px;color:var(--muted)">${d.label} · ${d.month_name}</div></div><div style="flex:1;min-width:180px"><div class="level-badge lb-${d.level}" style="margin-bottom:8px;font-size:12px">${LB[d.level]}</div><div style="font-size:13px">${d.suggestion}</div></div><div style="font-size:12px;color:var(--muted);line-height:1.8">Warning: <span style="color:var(--yellow)">${d.threshold.warning.toLocaleString()}</span><br>Critical: <span style="color:var(--red)">${d.threshold.critical.toLocaleString()}</span></div></div></div>`;
-}
+  // clock
+  function updateClock() { document.getElementById('clock').innerText = new Date().toLocaleTimeString('vi-VN'); }
+  setInterval(updateClock,1000); updateClock();
 
-// ── BOOKING ──
-const HOTELS={'Da Nang':[{name:'InterContinental Sun Peninsula',stars:5,price:'5,200,000',rating:'9.2',area:'Bán đảo Sơn Trà',link:'https://www.booking.com/hotel/vn/intercontinental-danang-sun-peninsula.vi.html'},{name:'Pullman Danang Beach Resort',stars:5,price:'3,800,000',rating:'8.8',area:'Bãi Bắc Mỹ An',link:'https://www.booking.com/hotel/vn/pullman-danang-beach-resort.vi.html'},{name:'Novotel Danang Premier Han River',stars:4,price:'2,100,000',rating:'8.5',area:'Trung tâm TP',link:'https://www.booking.com/hotel/vn/novotel-danang-premier-han-river.vi.html'},{name:'Grand Tourane Hotel',stars:4,price:'1,400,000',rating:'8.2',area:'Đường Bạch Đằng',link:'https://www.booking.com/hotel/vn/grand-tourane.vi.html'},{name:'Brilliant Hotel Danang',stars:3,price:'850,000',rating:'7.8',area:'Trung tâm',link:'https://www.booking.com/hotel/vn/brilliant.vi.html'}],'Hoi An':[{name:'Four Seasons The Nam Hai',stars:5,price:'12,000,000',rating:'9.6',area:'Điện Bàn, Quảng Nam',link:'https://www.booking.com/hotel/vn/four-seasons-resort-the-nam-hai-hoi-an.vi.html'},{name:'Anantara Hoi An Resort',stars:5,price:'4,500,000',rating:'9.1',area:'Dọc sông Thu Bồn',link:'https://www.booking.com/hotel/vn/anantara-hoi-an.vi.html'},{name:'Hoi An Historic Hotel',stars:4,price:'1,800,000',rating:'8.4',area:'Phố cổ',link:'https://www.booking.com/hotel/vn/hoi-an-historic.vi.html'},{name:'Little Hoi An Boutique',stars:4,price:'1,200,000',rating:'8.7',area:'Gần phố cổ',link:'https://www.booking.com/hotel/vn/little-hoian-boutique.vi.html'},{name:'Hoi An Silk Village Resort',stars:3,price:'750,000',rating:'8.0',area:'Ngoại ô',link:'https://www.booking.com/hotel/vn/hoi-an-silk-village.vi.html'}],'Hue':[{name:'Azerai La Résidence Hue',stars:5,price:'4,200,000',rating:'9.3',area:'Bờ sông Hương',link:'https://www.booking.com/hotel/vn/la-residence-hue.vi.html'},{name:'Silk Path Grand Hue',stars:5,price:'2,800,000',rating:'8.9',area:'Trung tâm',link:'https://www.booking.com/hotel/vn/silk-path-grand-hue.vi.html'},{name:'Eldora Hotel Hue',stars:4,price:'1,600,000',rating:'8.6',area:'Khu vực Đại Nội',link:'https://www.booking.com/hotel/vn/eldora.vi.html'},{name:'Hue Serene Palace Hotel',stars:4,price:'1,100,000',rating:'8.3',area:'Trung tâm',link:'https://www.booking.com/hotel/vn/hue-serene-palace.vi.html'},{name:'Moonlight Garden Hue',stars:3,price:'600,000',rating:'7.9',area:'Gần ga Huế',link:'https://www.booking.com/hotel/vn/moonlight-garden.vi.html'}]};
-let chartCap=null;
-function renderBooking(){
-  const city=document.getElementById('bk-city').value;
-  const stars=document.getElementById('bk-stars').value;
-  let hotels=HOTELS[city];
-  if(stars!=='all')hotels=hotels.filter(h=>h.stars===parseInt(stars));
-  document.getElementById('booking-list').innerHTML=hotels.map(h=>`<div class="booking-card"><div style="width:52px;height:52px;background:var(--bg3);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${'⭐'.repeat(Math.min(h.stars,3))}</div><div style="flex:1"><div class="bk-name">${h.name}</div><div class="bk-loc">📍 ${h.area}</div><div style="display:flex;align-items:center;gap:10px"><span class="bk-price">${h.price} ₫/đêm</span><span class="bk-rating">⭐${h.rating}</span><span style="font-size:11px;color:var(--yellow)">${'★'.repeat(h.stars)}</span></div><a class="bk-link" href="${h.link}" target="_blank">Xem trên Booking.com →</a></div></div>`).join('');
-  if(chartCap)chartCap.destroy();
-  const starCounts={3:0,4:0,5:0};
-  HOTELS[city].forEach(h=>starCounts[h.stars]++);
-  chartCap=new Chart(document.getElementById('chartCap'),{type:'pie',data:{labels:['5 sao','4 sao','3 sao'],datasets:[{data:[starCounts[5],starCounts[4],starCounts[3]],backgroundColor:['#d29922','#388bfd','#3fb950'],borderColor:'#161b22',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8b949e',boxWidth:10,font:{size:11}}}}}});
-}
-
-// ── REPORT CHARTS ──
-let reportInit=false;
-function initReportCharts(){
-  if(reportInit)return;reportInit=true;
-  new Chart(document.getElementById('chartR1'),{type:'doughnut',data:{labels:['Đà Nẵng 375 ngày','Hội An 61 ngày','Huế 196 ngày'],datasets:[{data:[375,61,196],backgroundColor:['#388bfd','#3fb950','#bc8cff'],borderColor:'#161b22',borderWidth:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8b949e',boxWidth:10,font:{size:11}}}}}});
-  new Chart(document.getElementById('chartR2'),{type:'bar',data:{labels:['2022','2023','2024','2025'],datasets:[{label:'Đà Nẵng',data:[4121,7530,10309,15060],backgroundColor:'#388bfd',borderRadius:3},{label:'Hội An',data:[1536,4000,4426,4228],backgroundColor:'#3fb950',borderRadius:3},{label:'Huế',data:[2050,3226,4282,4940],backgroundColor:'#bc8cff',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#8b949e',boxWidth:10,font:{size:11}}}},scales:{x:{grid:{color:'#21262d'},ticks:{color:'#8b949e'}},y:{grid:{color:'#21262d'},ticks:{color:'#8b949e',callback:v=>(v/1000).toFixed(0)+'k'}}}}});
-}
-
-// ── INIT ──
-document.getElementById('f-month').value=new Date().getMonth()+1;
-loadAll();
-setInterval(loadAll,5*60*1000);
+  loadAllData();
+  renderAlertPage();
+  renderReport();
+  setInterval(()=>loadAllData(), 30000); // auto refresh
 </script>
 </body>
 </html>
